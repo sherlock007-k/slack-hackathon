@@ -5,6 +5,10 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 from slack_bolt.middleware.assistant import Assistant
 from openai import OpenAI
 
+# Required for the Render dummy server
+from threading import Thread
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
 load_dotenv()
 
 app = App(token=os.environ.get("SLACK_BOT_TOKEN"))
@@ -314,6 +318,25 @@ def handle_standard_message(payload, say):
 
 app.use(assistant)
 
+# -----------------------------------------------------------------------------
+# RENDER DEPLOYMENT HEALTHCHECK WEB SERVER
+# -----------------------------------------------------------------------------
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(b"StackSage is awake and running!")
+
+def run_server():
+    # Render automatically injects the PORT environment variable
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
+    server.serve_forever()
+
 if __name__ == "__main__":
+    print("Starting background healthcheck server...")
+    Thread(target=run_server, daemon=True).start()
+    
     print("StackSage running")
     SocketModeHandler(app, os.environ.get("SLACK_APP_TOKEN")).start()
