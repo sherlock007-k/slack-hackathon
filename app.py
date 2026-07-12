@@ -321,12 +321,22 @@ app.use(assistant)
 # -----------------------------------------------------------------------------
 # RENDER DEPLOYMENT HEALTHCHECK WEB SERVER
 # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# RENDER DEPLOYMENT HEALTHCHECK WEB SERVER
+# -----------------------------------------------------------------------------
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
         self.wfile.write(b"StackSage is awake and running!")
+
+    def do_HEAD(self):
+        """Handles the HEAD requests sent by uptime monitors"""
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        # HEAD requests do not return a body, just the 200 OK headers!
 
 def run_server():
     # Render automatically injects the PORT environment variable
